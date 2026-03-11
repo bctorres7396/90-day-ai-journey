@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Iron Log">
+<meta name="theme-color" content="#0a0a0a">
+<title>Iron Log</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiSXJvbiBMb2ciLCJzaG9ydF9uYW1lIjoiSXJvbkxvZyIsInN0YXJ0X3VybCI6Ii4iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMGEwYTBhIiwidGhlbWVfY29sb3IiOiIjMGEwYTBhIn0=">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Oswald:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --border: #2a2a2a;
+    --accent: #e63946;
+    --accent-dim: #b82d38;
+    --accent-glow: rgba(230, 57, 70, 0.15);
+    --text: #f1f1f1;
+    --text-dim: #888;
+    --text-muted: #555;
+    --success: #2ec486;
+    --warning: #f4a261;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding-bottom: calc(20px + var(--safe-bottom));
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* ── Header ── */
+  .header {
+    padding: calc(16px + var(--safe-top)) 20px 14px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+  .header-row { display: flex; justify-content: space-between; align-items: center; }
+  .logo {
+    font-family: 'Oswald', 'JetBrains Mono', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon { color: var(--accent); font-size: 18px; }
+  .add-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    width: 38px;
+    height: 38px;
+    font-size: 22px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    transition: transform 0.1s;
+  }
+  .add-btn:active { transform: scale(0.92); }
+
+  /* ── Nav ── */
+  .nav { display: flex; gap: 4px; margin-top: 14px; }
+  .nav-btn {
+    flex: 1;
+    padding: 10px 0;
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .nav-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  /* ── Section ── */
+  .section { padding: 20px; }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  /* ── Exercise Item ── */
+  .exercise-item {
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .exercise-item:active { background: var(--accent-glow); border-color: var(--accent); }
+  .exercise-name { font-size: 15px; font-weight: 700; }
+  .exercise-meta { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  .exercise-pr { margin-left: 8px; color: var(--accent); }
+  .trend-up { color: var(--success); }
+  .trend-down { color: var(--warning); }
+  .trend-flat { color: var(--text-muted); }
+  .chevron { color: var(--text-muted); font-size: 18px; }
+
+  /* ── Inputs ── */
+  .input, .number-input {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .input:focus, .number-input:focus { border-color: var(--accent); }
+  .number-input {
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    padding: 14px;
+  }
+
+  /* ── Labels ── */
+  .label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .btn-primary:active { transform: scale(0.97); background: var(--accent-dim); }
+  .btn-secondary {
+    padding: 8px 16px;
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-danger {
+    padding: 6px 12px;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid rgba(230, 57, 70, 0.2);
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* ── PR Card ── */
+  .pr-card {
+    background: var(--accent-glow);
+    border-color: rgba(230, 57, 70, 0.27);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .pr-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+  .pr-value { font-size: 26px; font-weight: 800; }
+  .pr-unit { font-size: 14px; color: var(--text-dim); }
+
+  /* ── History Set ── */
+  .history-set {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .set-weight { font-weight: 700; font-size: 16px; }
+  .set-unit { font-size: 11px; color: var(--text-dim); }
+  .set-x { margin: 0 8px; color: var(--text-muted); }
+  .set-vol { margin-left: 12px; font-size: 11px; color: var(--text-muted); }
+  .set-time { font-size: 10px; color: var(--text-muted); }
+  .set-delete {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 6px;
+    font-family: inherit;
+  }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 200;
+    animation: fadeIn 0.15s ease-out;
+  }
+  .modal-content {
+    background: var(--bg);
+    border-radius: 16px 16px 0 0;
+    padding: 24px;
+    padding-bottom: calc(24px + var(--safe-bottom));
+    width: 100%;
+    max-width: 480px;
+    max-height: 80vh;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    animation: slideUp 0.2s ease-out;
+  }
+  .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; }
+  .modal-row { display: flex; gap: 12px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+
+  /* ── Rest Timer ── */
+  .timer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.94);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    animation: fadeIn 0.2s ease-out;
+  }
+  .timer-status {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 28px;
+    transition: color 0.3s;
+  }
+  .timer-status.done { color: var(--success); }
+  .timer-circle { position: relative; width: 190px; height: 190px; margin-bottom: 32px; }
+  .timer-circle svg { transform: rotate(-90deg); }
+  .timer-track { fill: none; stroke: var(--border); stroke-width: 6; }
+  .timer-progress {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s;
+  }
+  .timer-progress.done { stroke: var(--success); }
+  .timer-display {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .timer-digits {
+    font-size: 48px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    transition: color 0.3s;
+  }
+  .timer-digits.done { color: var(--success); }
+  .timer-toggles { display: flex; gap: 8px; margin-bottom: 32px; }
+  .timer-toggle {
+    padding: 10px 28px;
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .timer-toggle.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .timer-toggle.active.done { background: var(--success); border-color: var(--success); }
+  .timer-dismiss {
+    padding: 14px 52px;
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.5px;
+    transition: all 0.3s;
+  }
+  .timer-dismiss.done { background: var(--success); color: #fff; border-color: var(--success); }
+
+  /* ── Stats ── */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+  .stat-card { text-align: center; padding: 14px; }
+  .stat-value { font-size: 22px; font-weight: 800; color: var(--accent); }
+  .stat-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim); margin-top: 6px; }
+  .stats-subtitle { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: var(--text-dim); }
+  .pr-row { display: flex; justify-content: space-between; align-items: center; }
+  .pr-row-name { font-weight: 700; font-size: 14px; }
+  .pr-row-date { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+  .pr-row-value { font-weight: 800; font-size: 18px; color: var(--accent); }
+  .pr-row-vol { font-size: 10px; color: var(--text-muted); margin-top: 2px; text-align: right; }
+
+  /* ── Empty State ── */
+  .empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+  .empty-icon { font-size: 40px; margin-bottom: 16px; }
+  .empty-title { font-size: 14px; font-weight: 600; color: var(--text-dim); }
+  .empty-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  /* ── Animations ── */
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* ── Misc ── */
+  .flex-center { display: flex; align-items: center; gap: 8px; }
+  .date-header { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+  .delete-zone { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="header">
+    <div class="header-row">
+      <div class="logo"><span class="logo-icon">◆</span> IRON LOG</div>
+      <button class="add-btn" onclick="showModal('add')">+</button>
+    </div>
+    <div class="nav">
+      <button class="nav-btn active" id="nav-log" onclick="switchTab('log')">Log</button>
+      <button class="nav-btn" id="nav-stats" onclick="switchTab('stats')">Stats</button>
+    </div>
+  </div>
+
+  <div id="view-log" class="section"></div>
+  <div id="view-detail" class="section hidden"></div>
+  <div id="view-stats" class="section hidden"></div>
+</div>
+
+<!-- Add Exercise Modal -->
+<div id="modal-add" class="modal-overlay hidden" onclick="closeModal('add')">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-title">Add Exercise</div>
+    <label class="label">Exercise Name</label>
+    <input class="input" id="input-exercise-name" placeholder="e.g. Bench Press" onkeydown="if(event.key==='Enter')addExercise()">
+    <div class="modal-actions">
+      <button class="btn-primary" style="flex:1" onclick="addExercise()">＋ ADD</button>
+      <button class="btn-secondary" style="flex:0.5" onclick="closeModal('add')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Log Set Modal -->
+<div id="modal-log" class="modal-overlay hidden" onclick="closeModal('log')">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-title" id="log-modal-title"></div>
+    <p style="color:var(--text-dim);font-size:12px;margin:-12px 0 24px">Log a set</p>
+    <div class="modal-row">
+      <div style="flex:1">
+        <label class="label">Weight (lbs)</label>
+        <input class="number-input" id="input-weight" type="number" inputmode="decimal" placeholder="135">
+      </div>
+      <div style="flex:1">
+        <label class="label">Reps</label>
+        <input class="number-input" id="input-reps" type="number" inputmode="numeric" placeholder="8" onkeydown="if(event.key==='Enter')logSet()">
+      </div>
+    </div>
+    <button class="btn-primary" style="margin-top:20px" onclick="logSet()">LOG SET</button>
+    <button class="btn-secondary" style="width:100%;margin-top:10px;text-align:center" onclick="closeModal('log')">Cancel</button>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div id="modal-confirm" class="modal-overlay hidden" onclick="closeModal('confirm')">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-title" id="confirm-title"></div>
+    <p id="confirm-message" style="color:var(--text-dim);font-size:13px;margin:-8px 0 20px"></p>
+    <div class="modal-actions">
+      <button class="btn-danger" style="flex:1;padding:12px" id="confirm-btn" onclick="confirmAction()">Delete</button>
+      <button class="btn-secondary" style="flex:1;padding:12px" onclick="closeModal('confirm')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rest Timer -->
+<div id="rest-timer" class="timer-overlay hidden">
+  <div class="timer-status" id="timer-status">REST TIMER</div>
+  <div class="timer-circle">
+    <svg width="190" height="190">
+      <circle class="timer-track" cx="95" cy="95" r="75" />
+      <circle class="timer-progress" id="timer-ring" cx="95" cy="95" r="75" />
+    </svg>
+    <div class="timer-display">
+      <div class="timer-digits" id="timer-digits">1:30</div>
+    </div>
+  </div>
+  <div class="timer-toggles">
+    <button class="timer-toggle" id="timer-60" onclick="setTimerDuration(60)">60s</button>
+    <button class="timer-toggle active" id="timer-90" onclick="setTimerDuration(90)">90s</button>
+  </div>
+  <button class="timer-dismiss" id="timer-dismiss" onclick="dismissTimer()">SKIP</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DATA LAYER
+// ═══════════════════════════════════════════════════════════════
+const STORAGE_KEY = 'ironlog-data';
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : { exercises: [], history: [] };
+  } catch { return { exercises: [], history: [] }; }
+}
+
+function saveData(data) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+}
+
+let data = loadData();
+let currentTab = 'log';
+let currentExercise = null;
+let pendingConfirm = null;
+
+// ═══════════════════════════════════════════════════════════════
+// AUDIO
+// ═══════════════════════════════════════════════════════════════
+let audioCtx = null;
+
+function unlockAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playBeep() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    [0, 0.22, 0.44].forEach(delay => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'square';
+      gain.gain.setValueAtTime(0.35, audioCtx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + 0.15);
+      osc.start(audioCtx.currentTime + delay);
+      osc.stop(audioCtx.currentTime + delay + 0.15);
+    });
+  } catch {}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TIMER
+// ═══════════════════════════════════════════════════════════════
+let timerDuration = 90;
+let timerRemaining = 90;
+let timerInterval = null;
+let timerFinished = false;
+const CIRCUMFERENCE = 2 * Math.PI * 75;
+
+function startTimer() {
+  timerRemaining = timerDuration;
+  timerFinished = false;
+  updateTimerUI();
+  document.getElementById('rest-timer').classList.remove('hidden');
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timerRemaining--;
+    if (timerRemaining <= 0) {
+      timerRemaining = 0;
+      timerFinished = true;
+      clearInterval(timerInterval);
+      playBeep();
+    }
+    updateTimerUI();
+  }, 1000);
+}
+
+function setTimerDuration(d) {
+  timerDuration = d;
+  timerRemaining = d;
+  timerFinished = false;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timerRemaining--;
+    if (timerRemaining <= 0) {
+      timerRemaining = 0;
+      timerFinished = true;
+      clearInterval(timerInterval);
+      playBeep();
+    }
+    updateTimerUI();
+  }, 1000);
+  updateTimerUI();
+}
+
+function updateTimerUI() {
+  const pct = timerDuration > 0 ? ((timerDuration - timerRemaining) / timerDuration) * 100 : 100;
+  const offset = CIRCUMFERENCE - (pct / 100) * CIRCUMFERENCE;
+  const ring = document.getElementById('timer-ring');
+  ring.style.strokeDasharray = CIRCUMFERENCE;
+  ring.style.strokeDashoffset = offset;
+
+  const mins = Math.floor(timerRemaining / 60);
+  const secs = timerRemaining % 60;
+  document.getElementById('timer-digits').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+  const status = document.getElementById('timer-status');
+  const digits = document.getElementById('timer-digits');
+  const dismiss = document.getElementById('timer-dismiss');
+  const btn60 = document.getElementById('timer-60');
+  const btn90 = document.getElementById('timer-90');
+
+  if (timerFinished) {
+    status.textContent = 'REST COMPLETE — GO LIFT';
+    status.classList.add('done');
+    ring.classList.add('done');
+    digits.classList.add('done');
+    dismiss.classList.add('done');
+    dismiss.textContent = "LET'S GO";
+  } else {
+    status.textContent = 'REST TIMER';
+    status.classList.remove('done');
+    ring.classList.remove('done');
+    digits.classList.remove('done');
+    dismiss.classList.remove('done');
+    dismiss.textContent = 'SKIP';
+  }
+
+  btn60.className = 'timer-toggle' + (timerDuration === 60 ? ' active' : '') + (timerFinished ? ' done' : '');
+  btn90.className = 'timer-toggle' + (timerDuration === 90 ? ' active' : '') + (timerFinished ? ' done' : '');
+}
+
+function dismissTimer() {
+  clearInterval(timerInterval);
+  document.getElementById('rest-timer').classList.add('hidden');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════════
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function fmtTime(iso) {
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+function getBest(entries) {
+  if (!entries.length) return null;
+  return entries.reduce((b, e) => (e.weight > b.weight || (e.weight === b.weight && e.reps > b.reps)) ? e : b, entries[0]);
+}
+function getTrend(entries) {
+  if (entries.length < 2) return null;
+  const s = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const rv = s[0].weight * s[0].reps, pv = s[1].weight * s[1].reps;
+  return rv > pv ? 'up' : rv < pv ? 'down' : 'flat';
+}
+function groupByDate(entries) {
+  const g = {};
+  entries.forEach(e => {
+    const k = new Date(e.date).toLocaleDateString();
+    if (!g[k]) g[k] = [];
+    g[k].push(e);
+  });
+  return Object.entries(g).sort((a, b) => new Date(b[0]) - new Date(a[0]));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDERING
+// ═══════════════════════════════════════════════════════════════
+function switchTab(tab) {
+  currentTab = tab;
+  currentExercise = null;
+  document.getElementById('nav-log').className = 'nav-btn' + (tab === 'log' ? ' active' : '');
+  document.getElementById('nav-stats').className = 'nav-btn' + (tab === 'stats' ? ' active' : '');
+  document.getElementById('view-log').classList.toggle('hidden', tab !== 'log');
+  document.getElementById('view-detail').classList.add('hidden');
+  document.getElementById('view-stats').classList.toggle('hidden', tab !== 'stats');
+  if (tab === 'log') renderExerciseList();
+  if (tab === 'stats') renderStats();
+}
+
+function renderExerciseList() {
+  const el = document.getElementById('view-log');
+  if (!data.exercises.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🏋️</div><p class="empty-title">No exercises yet</p><p class="empty-sub">Hit the + button to add your first lift</p></div>`;
+    return;
+  }
+  el.innerHTML = data.exercises.map(ex => {
+    const entries = data.history.filter(h => h.exercise === ex);
+    const best = getBest(entries);
+    const trend = getTrend(entries);
+    const trendHTML = trend ? `<span class="trend-${trend}">${trend === 'up' ? '▲' : trend === 'down' ? '▼' : '─'}</span>` : '';
+    return `<div class="exercise-item" onclick="openExercise('${ex.replace(/'/g, "\\'")}')">
+      <div>
+        <div class="exercise-name">${ex}</div>
+        <div class="exercise-meta">${entries.length} set${entries.length !== 1 ? 's' : ''} logged${best ? `<span class="exercise-pr">PR: ${best.weight}×${best.reps}</span>` : ''}</div>
+      </div>
+      <div class="flex-center">${trendHTML}<span class="chevron">›</span></div>
+    </div>`;
+  }).join('');
+}
+
+function openExercise(name) {
+  currentExercise = name;
+  document.getElementById('view-log').classList.add('hidden');
+  document.getElementById('view-detail').classList.remove('hidden');
+  renderDetail();
+}
+
+function renderDetail() {
+  const ex = currentExercise;
+  const entries = data.history.filter(h => h.exercise === ex);
+  const grouped = groupByDate(entries);
+  const best = getBest(entries);
+  const el = document.getElementById('view-detail');
+
+  let html = `<button class="btn-secondary" style="margin-bottom:16px" onclick="backToList()">‹ Back</button>`;
+  html += `<h2 style="font-size:22px;font-weight:800;margin-bottom:4px">${ex}</h2>`;
+  html += `<p style="color:var(--text-dim);font-size:12px;margin-bottom:20px">${entries.length} total set${entries.length !== 1 ? 's' : ''}</p>`;
+
+  if (best) {
+    html += `<div class="card pr-card">
+      <div><div class="pr-label">PERSONAL RECORD</div><div class="pr-value">${best.weight} <span class="pr-unit">lbs</span> × ${best.reps} <span class="pr-unit">reps</span></div></div>
+      <div style="font-size:12px;color:var(--text-dim)">${fmtDate(best.date)}</div>
+    </div>`;
+  }
+
+  html += `<button class="btn-primary" style="margin-bottom:24px" onclick="showModal('log')">＋ LOG SET</button>`;
+
+  grouped.forEach(([, sets]) => {
+    html += `<div style="margin-bottom:20px"><div class="date-header">${fmtDate(sets[0].date)}</div>`;
+    sets.forEach(s => {
+      const idx = data.history.indexOf(s);
+      html += `<div class="history-set">
+        <div><span class="set-weight">${s.weight}<span class="set-unit"> lbs</span></span><span class="set-x">×</span><span class="set-weight">${s.reps}<span class="set-unit"> reps</span></span><span class="set-vol">vol: ${s.weight * s.reps}</span></div>
+        <div class="flex-center"><span class="set-time">${fmtTime(s.date)}</span><button class="set-delete" onclick="event.stopPropagation();confirmDeleteEntry(${idx})">×</button></div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  if (!entries.length) {
+    html += `<div class="empty" style="padding:40px 20px"><p style="color:var(--text-muted);font-size:13px">No sets logged yet. Time to lift.</p></div>`;
+  }
+
+  html += `<div class="delete-zone"><button class="btn-danger" onclick="confirmDeleteExercise('${ex.replace(/'/g, "\\'")}')">Delete Exercise</button></div>`;
+  el.innerHTML = html;
+}
+
+function backToList() {
+  currentExercise = null;
+  document.getElementById('view-detail').classList.add('hidden');
+  document.getElementById('view-log').classList.remove('hidden');
+  renderExerciseList();
+}
+
+function renderStats() {
+  const el = document.getElementById('view-stats');
+  if (!data.history.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><p class="empty-title">No data yet</p><p class="empty-sub">Start logging sets to see your stats</p></div>`;
+    return;
+  }
+  const totalSets = data.history.length;
+  const totalVol = data.history.reduce((s, h) => s + h.weight * h.reps, 0);
+  const days = new Set(data.history.map(h => new Date(h.date).toLocaleDateString())).size;
+
+  let html = `<h2 style="font-size:20px;font-weight:800;margin-bottom:20px">Stats</h2>`;
+  html += `<div class="stats-grid">
+    <div class="card stat-card"><div class="stat-value">${totalSets}</div><div class="stat-label">Total Sets</div></div>
+    <div class="card stat-card"><div class="stat-value">${(totalVol/1000).toFixed(1)}k</div><div class="stat-label">Total Vol</div></div>
+    <div class="card stat-card"><div class="stat-value">${days}</div><div class="stat-label">Days</div></div>
+  </div>`;
+
+  html += `<div class="stats-subtitle">Personal Records</div>`;
+  data.exercises.forEach(ex => {
+    const entries = data.history.filter(h => h.exercise === ex);
+    const best = getBest(entries);
+    if (!best) return;
+    html += `<div class="card"><div class="pr-row">
+      <div><div class="pr-row-name">${ex}</div><div class="pr-row-date">${fmtDate(best.date)}</div></div>
+      <div style="text-align:right"><div class="pr-row-value">${best.weight}×${best.reps}</div><div class="pr-row-vol">vol: ${best.weight * best.reps}</div></div>
+    </div></div>`;
+  });
+  el.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════════════════
+function addExercise() {
+  const input = document.getElementById('input-exercise-name');
+  const name = input.value.trim();
+  if (!name) return;
+  if (data.exercises.some(e => e.toLowerCase() === name.toLowerCase())) {
+    alert('Exercise already exists!');
+    return;
+  }
+  data.exercises.push(name);
+  data.exercises.sort((a, b) => a.localeCompare(b));
+  saveData(data);
+  input.value = '';
+  closeModal('add');
+  renderExerciseList();
+}
+
+function logSet() {
+  const w = parseFloat(document.getElementById('input-weight').value);
+  const r = parseInt(document.getElementById('input-reps').value);
+  if (!w || w <= 0 || !r || r <= 0) return;
+  unlockAudio();
+  data.history.push({ exercise: currentExercise, weight: w, reps: r, date: new Date().toISOString() });
+  saveData(data);
+  document.getElementById('input-weight').value = '';
+  document.getElementById('input-reps').value = '';
+  closeModal('log');
+  renderDetail();
+  startTimer();
+}
+
+function confirmDeleteExercise(name) {
+  pendingConfirm = { type: 'exercise', name };
+  document.getElementById('confirm-title').textContent = `Delete ${name}?`;
+  document.getElementById('confirm-message').textContent = 'This will remove the exercise and ALL its history. This can\'t be undone.';
+  document.getElementById('modal-confirm').classList.remove('hidden');
+}
+
+function confirmDeleteEntry(idx) {
+  pendingConfirm = { type: 'entry', idx };
+  document.getElementById('confirm-title').textContent = 'Delete this set?';
+  document.getElementById('confirm-message').textContent = 'This entry will be permanently removed.';
+  document.getElementById('modal-confirm').classList.remove('hidden');
+}
+
+function confirmAction() {
+  if (!pendingConfirm) return;
+  if (pendingConfirm.type === 'exercise') {
+    data.exercises = data.exercises.filter(e => e !== pendingConfirm.name);
+    data.history = data.history.filter(h => h.exercise !== pendingConfirm.name);
+    saveData(data);
+    closeModal('confirm');
+    backToList();
+  } else if (pendingConfirm.type === 'entry') {
+    data.history.splice(pendingConfirm.idx, 1);
+    saveData(data);
+    closeModal('confirm');
+    renderDetail();
+  }
+  pendingConfirm = null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════════════════
+function showModal(type) {
+  if (type === 'add') {
+    document.getElementById('modal-add').classList.remove('hidden');
+    setTimeout(() => document.getElementById('input-exercise-name').focus(), 100);
+  } else if (type === 'log') {
+    document.getElementById('log-modal-title').textContent = currentExercise;
+    document.getElementById('modal-log').classList.remove('hidden');
+    setTimeout(() => document.getElementById('input-weight').focus(), 100);
+  }
+}
+
+function closeModal(type) {
+  document.getElementById('modal-' + type).classList.add('hidden');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+renderExerciseList();
+</script>
+
+</body>
+</html>
